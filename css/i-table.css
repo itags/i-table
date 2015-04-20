@@ -1,0 +1,40 @@
+/* ======================================================================= */
+/* ======================================================================= */
+/* ======================================================================= */
+/* Definition of itag shadow-css is done by defining a `dummy` css-rule    */
+/* for the dummy-element: `itag-css` --> its property (also dummy) `i-tag` /*
+/* will define which itag will be css-shadowed                             /*
+/* ======================================================================= */
+itag-css {
+    i-tag: i-table;  /* set the property-value to the proper itag */
+}
+/* ======================================================================= */
+/* ======================================================================= */
+/* ======================================================================= */
+
+
+/* ================================= */
+/* set invisiblity when not rendered */
+/* ================================= */
+i-table:not(.itag-rendered) {
+    /* don't set visibility to hidden --> you cannot set a focus on those items */
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    z-index: -1;
+}
+
+i-table:not(.itag-rendered) * {
+    opacity: 0 !important;
+}
+/* ================================= */
+
+
+i-table tr {
+    position: relative;
+}
+
+i-table tr.empty {
+    opacity: 0;
+}
