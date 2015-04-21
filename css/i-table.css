@@ -30,11 +30,53 @@ i-table:not(.itag-rendered) * {
 }
 /* ================================= */
 
-
-i-table tr {
+i-table {
+    margin: 0;
+    display: inline-block;
     position: relative;
+    vertical-align: top;
+    border: solid 1px #000;
+    min-width: 1em;
+    min-height: 1em;
+    overflow: hidden;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
 }
 
-i-table tr.empty {
+/* simulation of table-element: */
+i-table >span {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    display: block;
+}
+
+/* simulation of tr-element: */
+i-table >span >span {
+    position: relative;
+    display: block;
+    width: auto;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+/* simulation of td-element: */
+i-table >span >span >span {
+    margin: 0;
+    padding: 0.32em 0.5em;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    border-left: 1px solid #cbcbcb;
+    border-width: 0 0 0 1px;
+    display: inline-block;
+    overflow: hidden;
+}
+
+i-table >span >span.empty {
     opacity: 0;
 }

@@ -36,6 +36,7 @@
     },
     "dependencies": {
         "itags.core": "itags/core",
+        "i-parcel": "itags/i-parcel",
         "i-scroller": "itags/i-scroller"
     },
     "devDependencies": {
