@@ -69,13 +69,15 @@ module.exports = function (window) {
                     // now set the right width:
                     width = col.width;
                     if (width) {
-                        if (width.endsWith('%')) {
-                            // calculate the width into pixels:
-                            width = (width*availableWidth/100);
-                        }
-                        // always specified as number (saved as pixels)
-                        else {
-                            width = parseInt(width, 10);
+                        if (typeof width==='string') {
+                            if (width.endsWith('%')) {
+                                // calculate the width into pixels:
+                                width = (width*availableWidth/100);
+                            }
+                            // always specified as number (saved as pixels)
+                            else {
+                                width = parseInt(width, 10);
+                            }
                         }
                         occupied += width;
                         css += 'i-table >span >span >span:nth-child('+(i+1)+') {width: '+width+'px}';
