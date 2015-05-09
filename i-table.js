@@ -15,10 +15,9 @@ module.exports = function (window) {
     if (!window.ITAGS[itagName]) {
 
         Itag = IScroller.subClass(itagName, {
-            attrs: {
-            },
 
             init: function() {
+console.warn('init table');
                 var element = this,
                     model = element.model;
                 // i-scroller reads the innercontent as it were the template
@@ -30,6 +29,9 @@ module.exports = function (window) {
                 catch(err) {
                     model.columns = [];
                 }
+
+
+
             },
 
            /**
@@ -48,15 +50,21 @@ module.exports = function (window) {
                 // set element css:
                 element.addSystemElement(css, false, true);
                 element.$superProp('render');
+                // fixedheadernode is only available after render of iscroller:
+                element.getData('_fixedHeaderNode').removeClass('itsa-hidden');
             },
+
+            templateHeaders: false,
 
             sync: function() {
                 var element = this,
                     columns = element.model.columns,
+                    fixedHeaderNode = element.getData('_fixedHeaderNode'),
                     availableWidth = element.width - parseInt(element.getStyle('border-left-width'), 10) - parseInt(element.getStyle('border-right-width'), 10),
                     len = columns.length,
                     occupied = 0,
                     css = '',
+                    headerContent = '',
                     cssNode = element.getElement('>style', true),
                     unspecified = [],
                     i, col, width, remaining, index;
@@ -80,23 +88,28 @@ module.exports = function (window) {
                             }
                         }
                         occupied += width;
-                        css += 'i-table >span >span >span:nth-child('+(i+1)+') {width: '+width+'px}';
+                        css += 'i-table span.i-table-row >span:nth-child('+(i+1)+'), i-table >section.fixed-header >span:nth-child('+(i+1)+') {width: '+width+'px}';
                     }
                     else {
                         // unspecified: give it the remaining width
                         // shared among other cols without width
                         unspecified[unspecified.length] = i;
                     }
+                    headerContent += '<span>' + col.key + '</span>';
                 }
                 len = unspecified.length;
                 if (len>0) {
                     remaining = Math.max(0, availableWidth - occupied)/len;
                     for (i=0; i<len; i++) {
                         index = unspecified[i];
-                        css += 'i-table >span >span >span:nth-child('+(index+1)+') {width: '+remaining+'px}';
+                        css += 'i-table span.i-table-row >span:nth-child('+(index+1)+'), i-table >section.fixed-header >span:nth-child('+(index+1)+') {width: '+remaining+'px}';
                     }
                 }
                 cssNode.setText(css);
+
+                // no node.templateHeaders, but predefined:
+                fixedHeaderNode.setHTML(headerContent);
+
                 element.$superProp('sync');
             },
 
@@ -105,7 +118,7 @@ module.exports = function (window) {
                     model = element.model,
                     columns = model.columns,
                     odd = ((index%2)!==0),
-                    rowContent = '<span class="'+(odd ? ' odd' : ' even')+'">',
+                    rowContent = '<span class="i-table-row '+(odd ? ' odd' : ' even')+'">',
                     len, i, col, value, formatter, cellContent;
                 if (!Object.isObject(oneItem)) {
                     console.warn('table item is no object!');

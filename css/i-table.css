@@ -55,17 +55,58 @@ i-table >span {
 }
 
 /* simulation of tr-element: */
-i-table >span >span {
+i-table span.i-table-row {
     position: relative;
-    display: block;
     width: auto;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
+    /* the next css comes from purecss: the class `.pure-g`: */
+}
+
+/* the next css comes from purecss: the class `.pure-g`: */
+.i-table-row {
+    letter-spacing: -0.31em; /* Webkit: collapse white-space between units */
+    *letter-spacing: normal; /* reset IE < 8 */
+    word-spacing: -0.43em; /* collapse white-space between units */
+    text-rendering: optimizespeed; /* Webkit: fixes text-rendering: optimizeLegibility */
+
+    /*
+    Resets the font family back to the OS/browser's default sans-serif font,
+    this the same font stack that Normalize.css sets for the `body`.
+    */
+    font-family: sans-serif;
+
+    /*
+    Use flexbox when possible to avoid `letter-spacing` side-effects.
+
+    NOTE: Firefox (as of 25) does not currently support flex-wrap, so the
+    `-moz-` prefix version is omitted.
+    */
+
+    display: -webkit-flex;
+    -webkit-flex-flow: row wrap;
+
+    /* IE10 uses display: flexbox */
+    display: -ms-flexbox;
+    -ms-flex-flow: row wrap;
+}
+
+/*
+Resets the font family back to the OS/browser's default sans-serif font,
+this the same font stack that Normalize.css sets for the `body`.
+*/
+.pure-g [class *= "pure-u"] {
+    font-family: sans-serif;
+}
+
+/* overrule z-index dragged element --> must be kept below.fixed-header */
+i-table .dd-high-z {
+    z-index: 898 !important;
 }
 
 /* simulation of td-element: */
-i-table >span >span >span {
+i-table span.i-table-row >span {
     margin: 0;
     padding: 0.32em 0.5em;
     -webkit-box-sizing: border-box;
@@ -73,10 +114,60 @@ i-table >span >span >span {
     box-sizing: border-box;
     border-left: 1px solid #cbcbcb;
     border-width: 0 0 0 1px;
-    display: inline-block;
+    /*float: left;*/
     overflow: hidden;
+    display: inline-block;
+    letter-spacing: normal;
+    word-spacing: normal;
+    vertical-align: top;
+    text-rendering: auto;
 }
 
-i-table >span >span.empty {
+i-table span.i-table-row >span:first-child {
+    border-left: none;
+}
+
+i-table span.i-table-row.empty {
     opacity: 0;
+}
+
+i-table section.fixed-header {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    z-index: 899;
+    background-color: #999;
+    color: #000;
+    margin: 0;
+    padding: 0;
+}
+
+/* simulation of th-element: */
+i-table section.fixed-header >span {
+    margin: 0;
+    padding: 0.32em 0.5em;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    /*float: left;*/
+    overflow: hidden;
+    display: inline-block;
+    letter-spacing: normal;
+    word-spacing: normal;
+    vertical-align: top;
+    text-rendering: auto;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    border-left: 1px solid #cbcbcb;
+    border-width: 0 0 0 1px;
+}
+
+i-table section.fixed-header >span:first-child {
+    border-left: none;
+}
+
+i-table section.fixed-header.resize {
+    cursor: col-resize;
 }
