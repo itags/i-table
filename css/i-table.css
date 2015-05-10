@@ -131,7 +131,7 @@ i-table span.i-table-row.empty {
     opacity: 0;
 }
 
-i-table section.fixed-header {
+i-table section[is="thead"] {
     position: absolute;
     left: 0;
     top: 0;
@@ -143,8 +143,17 @@ i-table section.fixed-header {
     padding: 0;
 }
 
+i-table section[is="thead"] >span {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    float: left;
+}
+
 /* simulation of th-element: */
-i-table section.fixed-header >span {
+i-table span[is="th"] {
     margin: 0;
     padding: 0.32em 0.5em;
     -webkit-box-sizing: border-box;
@@ -164,10 +173,10 @@ i-table section.fixed-header >span {
     border-width: 0 0 0 1px;
 }
 
-i-table section.fixed-header >span:first-child {
+i-table span:first-child span[is="th"] {
     border-left: none;
 }
 
-i-table section.fixed-header.resize {
+i-table section[is="thead"].resize {
     cursor: col-resize;
 }
