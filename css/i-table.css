@@ -35,7 +35,7 @@ i-table {
     display: inline-block;
     position: relative;
     vertical-align: top;
-    border: solid 1px #000;
+    border: 1px solid #cbcbcb;
     min-width: 1em;
     min-height: 1em;
     overflow: hidden;
@@ -65,7 +65,7 @@ i-table span.i-table-row {
 }
 
 /* the next css comes from purecss: the class `.pure-g`: */
-.i-table-row {
+i-table .i-table-row {
     letter-spacing: -0.31em; /* Webkit: collapse white-space between units */
     *letter-spacing: normal; /* reset IE < 8 */
     word-spacing: -0.43em; /* collapse white-space between units */
@@ -90,6 +90,7 @@ i-table span.i-table-row {
     /* IE10 uses display: flexbox */
     display: -ms-flexbox;
     -ms-flex-flow: row wrap;
+    background-color: ;
 }
 
 /*
@@ -102,11 +103,11 @@ this the same font stack that Normalize.css sets for the `body`.
 
 /* overrule z-index dragged element --> must be kept below.fixed-header */
 i-table .dd-high-z {
-    z-index: 898 !important;
+    z-index: 896 !important;
 }
 
 /* simulation of td-element: */
-i-table span.i-table-row >span {
+i-table span[is="td"] {
     margin: 0;
     padding: 0.32em 0.5em;
     -webkit-box-sizing: border-box;
@@ -121,10 +122,7 @@ i-table span.i-table-row >span {
     word-spacing: normal;
     vertical-align: top;
     text-rendering: auto;
-}
-
-i-table span.i-table-row >span:first-child {
-    border-left: none;
+    height: 100%;
 }
 
 i-table span.i-table-row.empty {
@@ -136,20 +134,25 @@ i-table section[is="thead"] {
     left: 0;
     top: 0;
     width: 100%;
-    z-index: 899;
-    background-color: #999;
-    color: #000;
+    z-index: 898;
     margin: 0;
     padding: 0;
+    background: #e0e0e0;
+    color: #000;
+    text-align: left;
+    vertical-align: middle;
 }
 
-i-table section[is="thead"] >span {
+i-table span.copy-node,
+i-table section[is="thead"] >span,
+i-table span.i-table-row >span {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     float: left;
+    overflow: hidden;
 }
 
 /* simulation of th-element: */
@@ -171,12 +174,91 @@ i-table span[is="th"] {
     white-space: nowrap;
     border-left: 1px solid #cbcbcb;
     border-width: 0 0 0 1px;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+    font-weight: bold;
 }
 
-i-table span:first-child span[is="th"] {
-    border-left: none;
+i-table section[is="thead"].col-dragging span[is="th"],
+i-table span.copy-node span[is="th"] {
+    cursor: pointer;
 }
 
-i-table section[is="thead"].resize {
+i-table section[is="thead"] span:first-child span[is="th"],
+i-table span.i-table-row >span:first-child span[is="td"] {
+    border-left-width: 0;
+}
+
+/* need double: resize for mouseover, resizing when busy resizing */
+i-table section[is="thead"].resize span[is="th"],
+i-table section[is="thead"].resizing span[is="th"] {
     cursor: col-resize;
+}
+
+i-table span.copy-node {
+    position: absolute;
+    z-index: 899;
+    background-color:#F00;
+    box-shadow: 0 0 0 1px rgba(0,0,0, 0.15) inset;
+    padding-left: 1px; /* replacement of original border-left-width */
+}
+
+i-table span.copy-node.first-child {
+    padding-left: 0;
+}
+
+i-table span.copy-node span[is="th"] {
+    border: none !important;
+}
+
+i-table span.vertical-insert {
+    position: absolute;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 6px;
+    height: 100%;
+    top: 0;
+    background-color: #0F0;
+    z-index: 897;
+}
+
+i-table span.col-dragging {
+    opacity: 0.3 !important;
+}
+
+/*
+striping:
+   even - #fff (white)
+   odd  - #f2f2f2 (light gray)
+*/
+i-table.striped .i-table-row.even span[is="td"] {
+    background-color: #FFF;
+}
+
+i-table.striped .i-table-row.odd span[is="td"] {
+    background-color: #f2f2f2;
+}
+
+/* BORDERED TABLES */
+i-table.bordered span[is="td"] {
+    border-bottom: 1px solid #cbcbcb;
+}
+
+i-table.bordered span.i-table-row:last-child > span[is="td"],
+i-table.horizontal span.i-table-row:last-child > span[is="td"] {
+    border-bottom-width: 0;
+}
+
+
+/* HORIZONTAL BORDERED TABLES */
+
+i-table.horizontal span[is="td"],
+i-table.horizontal span[is="th"] {
+    border-width: 0 0 1px 0;
+    border-bottom: 1px solid #cbcbcb;
 }

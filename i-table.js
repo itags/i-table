@@ -19,18 +19,15 @@ module.exports = function (window) {
             var node = e.target,
                 itable = node.getParent();
             itable.setListeners();
-console.warn('mouseover');
         }, 'i-table >section[is="thead"]');
 
         Event.after('mouseout', function(e) {
             var node = e.target,
                 itable = node.getParent();
             itable.removeListeners();
-console.warn('mouseout');
         }, 'i-table >section[is="thead"]');
 
         Event.after('mousedown', function(e) {
-console.warn('after mousedown '+e._colIndex);
             var colIndex = e._colIndex,
                 resize = e._startResize,
                 itable = e._itable,
@@ -39,9 +36,10 @@ console.warn('after mousedown '+e._colIndex);
                 vChildNodes = fixedHeaderNode.vnode.vChildNodes,
                 colNode = vChildNodes[colIndex].domNode,
                 column = model.columns[colIndex],
-                startPos, initialWidth, moveListener;
+                startPos, initialWidth, moveListener, dragNode, colLeft, reposition, verticalInsertNode,
+                beforeNode, shiftVerticalNode, thNodes, fixedHeaderNodeLeft, atTheEnd, newIndex;
             if (resize) {
-console.warn('column: '+column);
+                fixedHeaderNode.setClass('resizing');
                 // start dragging-feature to change col-width
                 startPos = e.clientX;
                 initialWidth = colNode.width;
@@ -49,27 +47,95 @@ console.warn('column: '+column);
                     var newPos = e2.clientX,
                         difference = newPos - startPos,
                         newWidth = Math.inbetween(0, initialWidth + difference, fixedHeaderNode.width);
-console.warn('newWidth: '+newWidth);
                     column.width = newWidth;
                 });
+
+                // CAUTIOUS: mouseup won't get caught when the mouse is released outside the window!!
                 Event.onceAfter('mouseup', function() {
                     moveListener.detach();
+                    fixedHeaderNode.removeClass('resizing');
                 });
             }
             else {
+                fixedHeaderNodeLeft = fixedHeaderNode.left;
                 // start dragging-feature to change col-position
+                // first setup the draggable-copy node to visualize the dragged node:
+                dragNode = itable.getElement('>span.copy-node', true);
+                dragNode || (dragNode=itable.addSystemElement('<span class="itsa-hidden copy-node"></span>'));
+                verticalInsertNode = itable.getElement('>span.vertical-insert', true);
+                verticalInsertNode || (verticalInsertNode=itable.addSystemElement('<span class="itsa-hidden vertical-insert"></span>'));
+                colLeft = (colNode.left - fixedHeaderNodeLeft);
+                dragNode.setInlineStyles([
+                    {property: 'left', value: colLeft+'px'},
+                    {property: 'width', value: colNode.width+'px'},
+                    {property: 'height', value: colNode.height+'px'}
+                ]);
+                dragNode.toggleClass('first-child', (colIndex===0));
+                dragNode.setHTML(colNode.getHTML());
+                shiftVerticalNode = Math.round(verticalInsertNode.width/2);
+                verticalInsertNode.setInlineStyle('left', ((colIndex===0) ? (colNode.right-fixedHeaderNodeLeft-shiftVerticalNode) : Math.max(0, (colLeft-shiftVerticalNode)))+'px');
+                colNode.setClass('col-dragging');
+                itable.setData('_draggedCol', colIndex);
+                dragNode.removeClass('itsa-hidden');
+                verticalInsertNode.removeClass('itsa-hidden');
+                startPos = e.clientX;
+                thNodes = fixedHeaderNode.getAll('>span');
+                fixedHeaderNode.setClass('col-dragging');
+                moveListener = Event.after('mousemove', function(e2) {
+                    var mousePosX = e2.clientX,
+                        difference = mousePosX - startPos,
+                        newX = Math.inbetween(0, colLeft + difference, fixedHeaderNode.width-colNode.width);
+                    beforeNode = null;
+                    atTheEnd = false;
+                    dragNode.setInlineStyle('left', newX+'px');
+                    thNodes.some(function(node, index) {
+                        var nodeLeft = node.left,
+                            centerX = nodeLeft + Math.round(node.width/2);
+                        if (mousePosX<centerX) {
+                            beforeNode = node;
+                            newX = nodeLeft;
+                            newIndex = index;
+                        }
+                        return beforeNode;
+                    });
+                    (newIndex>=(colIndex+1)) && newIndex--;
+                    if (!beforeNode) {
+                        newIndex = thNodes.length-1;
+                        beforeNode = thNodes[newIndex];
+                        atTheEnd = true;
+                        newX = (colIndex===thNodes.length-1) ? beforeNode.left : (beforeNode.right - shiftVerticalNode);
+                    }
+                    else if ((colIndex===0) && (beforeNode===thNodes[0])) {
+                        newX = beforeNode.right;
+                        newIndex = 0;
+                    }
+                    verticalInsertNode.setInlineStyle('left', Math.max(0, (newX-fixedHeaderNodeLeft-shiftVerticalNode))+'px');
+                });
+                Event.onceAfter('mouseup', function() {
+                    moveListener.detach();
+                    dragNode.setClass('itsa-hidden');
+                    verticalInsertNode.setClass('itsa-hidden');
+                    colNode.removeClass('col-dragging');
+                    fixedHeaderNode.removeClass('col-dragging');
+                    itable.removeData('_draggedCol');
+                    if ((newIndex!==undefined) && (newIndex!==colIndex)) {
+                        model.columns.insertAt(column, newIndex);
+                    }
+                    else {
+                        itable.syncUI(); // unmark the cells with class: col-dragging
+                    }
+                });
+                itable.syncUI(); // mark the cells with class: col-dragging
             }
         }, function(e) {
-console.warn('after mousedown filterfn');
             var node = e.target.getParent(),
                 fixedHeaderNode = node.inside('i-table >section[is="thead"]'),
-                itable = fixedHeaderNode.getParent(),
-                model = itable.model,
-                vChildNodes, colIndex, firstCol, lastCol, xMouse, colLeft, colRight, startResize, insideRightArea, insideLeftArea, filterOk;
+                itable, model, vChildNodes, colIndex, firstCol, lastCol, xMouse, colLeft, colRight, startResize, insideRightArea, insideLeftArea, filterOk;
             if (!fixedHeaderNode) {
-console.warn('after mousedown returns false 1');
                 return false;
             }
+            itable = fixedHeaderNode.getParent(),
+            model = itable.model,
             vChildNodes = fixedHeaderNode.vnode.vChildNodes;
             colIndex = vChildNodes.indexOf(node.vnode);
             firstCol = (colIndex===0);
@@ -80,13 +146,12 @@ console.warn('after mousedown returns false 1');
             if (colIndex===-1) {
                 // need to have this: when entering the table from left or right,
                 // colIndex can be -1.
-console.warn('after mousedown returns false 2');
                 return false;
             }
             insideRightArea = (xMouse<=colRight) && (xMouse>=(colRight-RESIZE_MARGIN));
             insideLeftArea = !insideRightArea && (xMouse>=colLeft) && (xMouse<=(colLeft+RESIZE_MARGIN));
             // store colIndex and resize, so it can be used in the subscriber
-            startResize = ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
+            startResize = model['col-resize'] && ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
             filterOk = model['col-reorder'] || (model['col-resize'] && startResize);
             if (filterOk) {
                 e._colIndex = insideLeftArea ? (colIndex-1) : colIndex;
@@ -94,14 +159,12 @@ console.warn('after mousedown returns false 2');
                 e._fixedHeaderNode = fixedHeaderNode;
                 e._itable = itable;
             }
-console.warn('after mousedown returns filterOk: '+filterOk);
             return filterOk;
         });
 
         Itag = IScroller.subClass(itagName, {
 
             init: function() {
-console.warn('init table');
                 var element = this,
                     model = element.model;
                 // i-scroller reads the innercontent as it were the template
@@ -131,6 +194,7 @@ console.warn('init table');
 
             setListeners: function() {
                 var element = this,
+                    model = element.model,
                     listener;
                 listener = element.selfAfter('mousemove', function(e) {
                     var node = e.target.getParent(),
@@ -150,7 +214,7 @@ console.warn('init table');
                     }
                     insideRightArea = (xMouse<=colRight) && (xMouse>=(colRight-RESIZE_MARGIN));
                     insideLeftArea = !insideRightArea && (xMouse>=colLeft) && (xMouse<=(colLeft+RESIZE_MARGIN));
-                    resizeHandle = ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
+                    resizeHandle = model['col-resize'] && ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
                     fixedHeaderNode.toggleClass('resize', resizeHandle);
                 });
                 element.setData('_headerMoveListener', listener);
@@ -181,7 +245,7 @@ console.warn('init table');
 
             templateHeaders: false,
 
-            sync: function() {
+            syncCols: function() {
                 var element = this,
                     columns = element.model.columns,
                     fixedHeaderNode = element.getData('_fixedHeaderNode'),
@@ -193,6 +257,7 @@ console.warn('init table');
                     cssNode = element.getElement('>style', true),
                     unspecified = [],
                     i, col, width, remaining, index;
+
                 for (i=0; i<len; i++) {
                     col = columns[i];
                     if (typeof col==='string') {
@@ -201,7 +266,7 @@ console.warn('init table');
                     }
                     // now set the right width:
                     width = col.width;
-                    if (width) {
+                    if (width!==undefined) { // can be zero!
                         if (typeof width==='string') {
                             if (width.endsWith('%')) {
                                 // calculate the width into pixels:
@@ -213,7 +278,11 @@ console.warn('init table');
                             }
                         }
                         occupied += width;
-                        css += 'i-table span.i-table-row >span:nth-child('+(i+1)+'), i-table >section[is="thead"] >span:nth-child('+(i+1)+'), i-table >section[is="thead"] >span:nth-child('+(i+1)+') span[is="th"] {width: '+width+'px}';
+                        css += 'i-table span.i-table-row >span:nth-child('+(i+1)+'), '+
+                               'i-table span.i-table-row >span:nth-child('+(i+1)+') span[is="td"], '+
+                               'i-table >section[is="thead"] >span:nth-child('+(i+1)+'), '+
+                               'i-table >section[is="thead"] >span:nth-child('+(i+1)+') span[is="th"] '+
+                               '{width: '+width+'px}';
                     }
                     else {
                         // unspecified: give it the remaining width
@@ -229,22 +298,33 @@ console.warn('init table');
                     remaining = Math.max(0, availableWidth - occupied)/len;
                     for (i=0; i<len; i++) {
                         index = unspecified[i];
-                        css += 'i-table span.i-table-row >span:nth-child('+(index+1)+'), i-table >section[is="thead"] >span:nth-child('+(index+1)+'), i-table >section[is="thead"] >span:nth-child('+(index+1)+') span[is="th"] {width: '+remaining+'px}';
+                        css += 'i-table span.i-table-row >span:nth-child('+(index+1)+'), '+
+                               'i-table span.i-table-row >span:nth-child('+(index+1)+') span[is="td"], '+
+                               'i-table >section[is="thead"] >span:nth-child('+(index+1)+'), '+
+                               'i-table >section[is="thead"] >span:nth-child('+(index+1)+') span[is="th"] '+
+                               '{width: '+remaining+'px}';
                     }
                 }
                 cssNode.setText(css);
-
                 // no node.templateHeaders, but predefined:
                 fixedHeaderNode.setHTML(headerContent);
+                // save current definition of the columns as a copy:
+                element.setData('_columnsCopy', columns.deepClone());
+            },
 
+            sync: function() {
+                var element = this,
+                    prevColdef = element.getData('_columnsCopy') || [];
+                element.model.columns.sameValue(prevColdef) || element.syncCols();
                 element.$superProp('sync');
             },
 
-            drawItem: function(oneItem, index) {
+            drawItem: function(oneItem, prevItem, index) {
                 var element = this,
                     model = element.model,
                     columns = model.columns,
                     odd = ((index%2)!==0),
+                    draggedCol = element.getData('_draggedCol'),
                     rowContent = '<span class="i-table-row '+(odd ? ' odd' : ' even')+'">',
                     len, i, col, value, formatter, cellContent;
                 if (!Object.isObject(oneItem)) {
@@ -270,7 +350,9 @@ console.warn('init table');
                     else {
                         cellContent = value;
                     }
-                    rowContent += '<span class="col-'+col.key.replaceAll(' ', '-')+'">' + cellContent + '</span>';
+                    // NEED DOUBLE SPAN!
+                    // outer span has padding=0, so we can easily resize below padding, while the padding is applied to the inner span.
+                    rowContent += '<span><span is="td" class="col-'+col.key.replaceAll(' ', '-')+((draggedCol===i) ? ' col-dragging' : '')+'">' + cellContent + '</span></span>';
                 }
                 rowContent += '</span>';
                 return rowContent;
