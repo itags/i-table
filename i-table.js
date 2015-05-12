@@ -36,7 +36,7 @@ module.exports = function (window) {
                 vChildNodes = fixedHeaderNode.vnode.vChildNodes,
                 colNode = vChildNodes[colIndex].domNode,
                 column = model.columns[colIndex],
-                startPos, initialWidth, moveListener, dragNode, colLeft, reposition, verticalInsertNode,
+                startPos, initialWidth, moveListener, dragNode, colLeft, verticalInsertNode,
                 beforeNode, shiftVerticalNode, thNodes, fixedHeaderNodeLeft, atTheEnd, newIndex;
             if (resize) {
                 fixedHeaderNode.setClass('resizing');
@@ -151,8 +151,8 @@ module.exports = function (window) {
             insideRightArea = (xMouse<=colRight) && (xMouse>=(colRight-RESIZE_MARGIN));
             insideLeftArea = !insideRightArea && (xMouse>=colLeft) && (xMouse<=(colLeft+RESIZE_MARGIN));
             // store colIndex and resize, so it can be used in the subscriber
-            startResize = model['col-resize'] && ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
-            filterOk = model['col-reorder'] || (model['col-resize'] && startResize);
+            startResize = model.resizable && ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
+            filterOk = model.reorderable || (model.resizable && startResize);
             if (filterOk) {
                 e._colIndex = insideLeftArea ? (colIndex-1) : colIndex;
                 e._startResize = startResize;
@@ -179,8 +179,15 @@ module.exports = function (window) {
             },
 
             attrs: {
-                'col-reorder': 'boolean',
-                'col-resize': 'boolean'
+                reorderable: 'boolean',
+                resizable: 'boolean',
+                sortable: 'boolean',
+                sort: 'string'
+            },
+
+            // adjust behaviour of the iscroller:
+            getDirection: function() {
+                return 'xy';
             },
 
             removeListeners: function() {
@@ -214,7 +221,7 @@ module.exports = function (window) {
                     }
                     insideRightArea = (xMouse<=colRight) && (xMouse>=(colRight-RESIZE_MARGIN));
                     insideLeftArea = !insideRightArea && (xMouse>=colLeft) && (xMouse<=(colLeft+RESIZE_MARGIN));
-                    resizeHandle = model['col-resize'] && ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
+                    resizeHandle = model.resizable && ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
                     fixedHeaderNode.toggleClass('resize', resizeHandle);
                 });
                 element.setData('_headerMoveListener', listener);
@@ -247,7 +254,8 @@ module.exports = function (window) {
 
             syncCols: function() {
                 var element = this,
-                    columns = element.model.columns,
+                    model = element.model,
+                    columns = model.columns,
                     fixedHeaderNode = element.getData('_fixedHeaderNode'),
                     availableWidth = element.width - parseInt(element.getStyle('border-left-width'), 10) - parseInt(element.getStyle('border-right-width'), 10),
                     len = columns.length,
@@ -278,8 +286,8 @@ module.exports = function (window) {
                             }
                         }
                         occupied += width;
-                        css += 'i-table span.i-table-row >span:nth-child('+(i+1)+'), '+
-                               'i-table span.i-table-row >span:nth-child('+(i+1)+') span[is="td"], '+
+                        css += 'i-table section.i-table-row >section:nth-child('+(i+1)+'), '+
+                               'i-table section.i-table-row >section:nth-child('+(i+1)+') section[is="td"], '+
                                'i-table >section[is="thead"] >span:nth-child('+(i+1)+'), '+
                                'i-table >section[is="thead"] >span:nth-child('+(i+1)+') span[is="th"] '+
                                '{width: '+width+'px}';
@@ -291,20 +299,37 @@ module.exports = function (window) {
                     }
                     // NEED DOUBLE SPAN!
                     // outer span has padding=0, so we can easily resize below padding, while the padding is applied to the inner span.
-                    headerContent += '<span><span is="th">' + col.key + '</span></span>';
+                    headerContent += '<span><span is="th">' + col.key + '</span>'+(model.sortable ? '<span is="sort"></span>' : '')+'</span>';
                 }
                 len = unspecified.length;
                 if (len>0) {
                     remaining = Math.max(0, availableWidth - occupied)/len;
                     for (i=0; i<len; i++) {
                         index = unspecified[i];
-                        css += 'i-table span.i-table-row >span:nth-child('+(index+1)+'), '+
-                               'i-table span.i-table-row >span:nth-child('+(index+1)+') span[is="td"], '+
+                        css += 'i-table section.i-table-row >section:nth-child('+(index+1)+'), '+
+                               'i-table section.i-table-row >section:nth-child('+(index+1)+') section[is="td"], '+
                                'i-table >section[is="thead"] >span:nth-child('+(index+1)+'), '+
                                'i-table >section[is="thead"] >span:nth-child('+(index+1)+') span[is="th"] '+
                                '{width: '+remaining+'px}';
+                        occupied += remaining;
                     }
                 }
+                else if (occupied<availableWidth) {
+                    // all cols are set, yet the table isn't fully filled
+                    // we already have the last col's width set, but we can do it again: the latter will overrule.
+                    // `availableWidth` holds the last set width
+                    width || (width=0);
+                    width += (availableWidth - occupied);
+                    occupied = availableWidth; // needed for setting container width later on
+                    len = columns.length; // redefine for it was changed
+                    css += 'i-table section.i-table-row >section:nth-child('+len+'), '+
+                           'i-table section.i-table-row >section:nth-child('+len+') section[is="td"], '+
+                           'i-table >section[is="thead"] >span:nth-child('+len+'), '+
+                           'i-table >section[is="thead"] >span:nth-child('+len+') span[is="th"] '+
+                           '{width: '+width+'px}';
+
+                }
+                css += 'i-table >section[is="thead"], i-table >span {width:'+occupied+'px}';
                 cssNode.setText(css);
                 // no node.templateHeaders, but predefined:
                 fixedHeaderNode.setHTML(headerContent);
@@ -314,9 +339,33 @@ module.exports = function (window) {
 
             sync: function() {
                 var element = this,
-                    prevColdef = element.getData('_columnsCopy') || [];
+                    prevColdef = element.getData('_columnsCopy') || [],
+                    scrollContainer, maxHeight, vRowChildNodes, vRowChildNode, len, i, vCellNodes, vCellChildNode, j, len2;
                 element.model.columns.sameValue(prevColdef) || element.syncCols();
                 element.$superProp('sync');
+                if (ITSA.UA.isIE && ITSA.UA.ieVersion<10) {
+                    // we need to calculate the height of each cell of every row and set the max-height as inline height
+                    // only IE9, because above, we are using display: flex
+                    scrollContainer = element.getData('_scrollContainer');
+                    vRowChildNodes = scrollContainer.vnode.vChildNodes;
+                    len = vRowChildNodes.length;
+                    for (i=0; i<len; i++) {
+                        vRowChildNode = vRowChildNodes[i];
+                        vCellNodes = vRowChildNode.vChildNodes[0].vChildNodes;
+                        len2 = vCellNodes.length;
+                        // first calculate the maxheight:
+                        maxHeight = 0;
+                        for (j=0; j<len2; j++) {
+                            vCellChildNode = vCellNodes[j].vChildNodes[0];
+                            maxHeight = Math.max(maxHeight, vCellChildNode.domNode.height);
+                        }
+                        // set the max height for all cells
+                        for (j=0; j<len2; j++) {
+                            vCellChildNode = vCellNodes[j].vChildNodes[0];
+                            vCellChildNode.domNode.setInlineStyle('height', maxHeight+'px');
+                        }
+                    }
+                }
             },
 
             drawItem: function(oneItem, prevItem, index) {
@@ -325,7 +374,7 @@ module.exports = function (window) {
                     columns = model.columns,
                     odd = ((index%2)!==0),
                     draggedCol = element.getData('_draggedCol'),
-                    rowContent = '<span class="i-table-row '+(odd ? ' odd' : ' even')+'">',
+                    rowContent = '<section class="i-table-row '+(odd ? ' odd' : ' even')+'">',
                     len, i, col, value, formatter, cellContent;
                 if (!Object.isObject(oneItem)) {
                     console.warn('table item is no object!');
@@ -351,10 +400,10 @@ module.exports = function (window) {
                         cellContent = value;
                     }
                     // NEED DOUBLE SPAN!
-                    // outer span has padding=0, so we can easily resize below padding, while the padding is applied to the inner span.
-                    rowContent += '<span><span is="td" class="col-'+col.key.replaceAll(' ', '-')+((draggedCol===i) ? ' col-dragging' : '')+'">' + cellContent + '</span></span>';
+                    // outer section has padding=0, so we can easily resize below padding, while the padding is applied to the inner section.
+                    rowContent += '<section><section is="td" class="col-'+col.key.replaceAll(' ', '-')+((draggedCol===i) ? ' col-dragging' : '')+'">' + cellContent + '</section></section>';
                 }
-                rowContent += '</span>';
+                rowContent += '</section>';
                 return rowContent;
             },
 
