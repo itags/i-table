@@ -2,12 +2,10 @@ module.exports = function (window) {
     "use strict";
 
     require('./css/i-table.css'); // <-- define your own itag-name here
+    require('itags.core')(window);
 
-    var itagCore = require('itags.core')(window),
-        itagName = 'i-table', // <-- define your own itag-name here
-        DOCUMENT = window.document,
+    var itagName = 'i-table', // <-- define your own itag-name here
         ITSA = window.ITSA,
-        Event = ITSA.Event,
         microtemplate = require('i-parcel/lib/microtemplate.js'),
         IScroller = require('i-scroller')(window),
         RESIZE_MARGIN = 5,
@@ -15,152 +13,7 @@ module.exports = function (window) {
 
     if (!window.ITAGS[itagName]) {
 
-        Event.after('mouseover', function(e) {
-            var node = e.target,
-                itable = node.getParent();
-            itable.setListeners();
-        }, 'i-table >section[is="thead"]');
-
-        Event.after('mouseout', function(e) {
-            var node = e.target,
-                itable = node.getParent();
-            itable.removeListeners();
-        }, 'i-table >section[is="thead"]');
-
-        Event.after('mousedown', function(e) {
-            var colIndex = e._colIndex,
-                resize = e._startResize,
-                itable = e._itable,
-                model = itable.model,
-                fixedHeaderNode = e._fixedHeaderNode,
-                vChildNodes = fixedHeaderNode.vnode.vChildNodes,
-                colNode = vChildNodes[colIndex].domNode,
-                column = model.columns[colIndex],
-                startPos, initialWidth, moveListener, dragNode, colLeft, verticalInsertNode,
-                beforeNode, shiftVerticalNode, thNodes, fixedHeaderNodeLeft, atTheEnd, newIndex;
-            if (resize) {
-                fixedHeaderNode.setClass('resizing');
-                // start dragging-feature to change col-width
-                startPos = e.clientX;
-                initialWidth = colNode.width;
-                moveListener = Event.after('mousemove', function(e2) {
-                    var newPos = e2.clientX,
-                        difference = newPos - startPos,
-                        newWidth = Math.inbetween(0, initialWidth + difference, fixedHeaderNode.width);
-                    column.width = newWidth;
-                });
-
-                // CAUTIOUS: mouseup won't get caught when the mouse is released outside the window!!
-                Event.onceAfter('mouseup', function() {
-                    moveListener.detach();
-                    fixedHeaderNode.removeClass('resizing');
-                });
-            }
-            else {
-                fixedHeaderNodeLeft = fixedHeaderNode.left;
-                // start dragging-feature to change col-position
-                // first setup the draggable-copy node to visualize the dragged node:
-                dragNode = itable.getElement('>span.copy-node', true);
-                dragNode || (dragNode=itable.addSystemElement('<span class="itsa-hidden copy-node"></span>'));
-                verticalInsertNode = itable.getElement('>span.vertical-insert', true);
-                verticalInsertNode || (verticalInsertNode=itable.addSystemElement('<span class="itsa-hidden vertical-insert"></span>'));
-                colLeft = (colNode.left - fixedHeaderNodeLeft);
-                dragNode.setInlineStyles([
-                    {property: 'left', value: colLeft+'px'},
-                    {property: 'width', value: colNode.width+'px'},
-                    {property: 'height', value: colNode.height+'px'}
-                ]);
-                dragNode.toggleClass('first-child', (colIndex===0));
-                dragNode.setHTML(colNode.getHTML());
-                shiftVerticalNode = Math.round(verticalInsertNode.width/2);
-                verticalInsertNode.setInlineStyle('left', ((colIndex===0) ? (colNode.right-fixedHeaderNodeLeft-shiftVerticalNode) : Math.max(0, (colLeft-shiftVerticalNode)))+'px');
-                colNode.setClass('col-dragging');
-                itable.setData('_draggedCol', colIndex);
-                dragNode.removeClass('itsa-hidden');
-                verticalInsertNode.removeClass('itsa-hidden');
-                startPos = e.clientX;
-                thNodes = fixedHeaderNode.getAll('>span');
-                fixedHeaderNode.setClass('col-dragging');
-                moveListener = Event.after('mousemove', function(e2) {
-                    var mousePosX = e2.clientX,
-                        difference = mousePosX - startPos,
-                        newX = Math.inbetween(0, colLeft + difference, fixedHeaderNode.width-colNode.width);
-                    beforeNode = null;
-                    atTheEnd = false;
-                    dragNode.setInlineStyle('left', newX+'px');
-                    thNodes.some(function(node, index) {
-                        var nodeLeft = node.left,
-                            centerX = nodeLeft + Math.round(node.width/2);
-                        if (mousePosX<centerX) {
-                            beforeNode = node;
-                            newX = nodeLeft;
-                            newIndex = index;
-                        }
-                        return beforeNode;
-                    });
-                    (newIndex>=(colIndex+1)) && newIndex--;
-                    if (!beforeNode) {
-                        newIndex = thNodes.length-1;
-                        beforeNode = thNodes[newIndex];
-                        atTheEnd = true;
-                        newX = (colIndex===thNodes.length-1) ? beforeNode.left : (beforeNode.right - shiftVerticalNode);
-                    }
-                    else if ((colIndex===0) && (beforeNode===thNodes[0])) {
-                        newX = beforeNode.right;
-                        newIndex = 0;
-                    }
-                    verticalInsertNode.setInlineStyle('left', Math.max(0, (newX-fixedHeaderNodeLeft-shiftVerticalNode))+'px');
-                });
-                Event.onceAfter('mouseup', function() {
-                    moveListener.detach();
-                    dragNode.setClass('itsa-hidden');
-                    verticalInsertNode.setClass('itsa-hidden');
-                    colNode.removeClass('col-dragging');
-                    fixedHeaderNode.removeClass('col-dragging');
-                    itable.removeData('_draggedCol');
-                    if ((newIndex!==undefined) && (newIndex!==colIndex)) {
-                        model.columns.insertAt(column, newIndex);
-                    }
-                    else {
-                        itable.syncUI(); // unmark the cells with class: col-dragging
-                    }
-                });
-                itable.syncUI(); // mark the cells with class: col-dragging
-            }
-        }, function(e) {
-            var node = e.target.getParent(),
-                fixedHeaderNode = node.inside('i-table >section[is="thead"]'),
-                itable, model, vChildNodes, colIndex, firstCol, lastCol, xMouse, colLeft, colRight, startResize, insideRightArea, insideLeftArea, filterOk;
-            if (!fixedHeaderNode) {
-                return false;
-            }
-            itable = fixedHeaderNode.getParent(),
-            model = itable.model,
-            vChildNodes = fixedHeaderNode.vnode.vChildNodes;
-            colIndex = vChildNodes.indexOf(node.vnode);
-            firstCol = (colIndex===0);
-            lastCol = (colIndex===(vChildNodes.length-1));
-            xMouse = e.clientX;
-            colLeft = node.left;
-            colRight = colLeft + node.width;
-            if (colIndex===-1) {
-                // need to have this: when entering the table from left or right,
-                // colIndex can be -1.
-                return false;
-            }
-            insideRightArea = (xMouse<=colRight) && (xMouse>=(colRight-RESIZE_MARGIN));
-            insideLeftArea = !insideRightArea && (xMouse>=colLeft) && (xMouse<=(colLeft+RESIZE_MARGIN));
-            // store colIndex and resize, so it can be used in the subscriber
-            startResize = model.resizable && ((insideLeftArea && !firstCol) || (insideRightArea && !lastCol));
-            filterOk = model.reorderable || (model.resizable && startResize);
-            if (filterOk) {
-                e._colIndex = insideLeftArea ? (colIndex-1) : colIndex;
-                e._startResize = startResize;
-                e._fixedHeaderNode = fixedHeaderNode;
-                e._itable = itable;
-            }
-            return filterOk;
-        });
+        require('./global-events.js')(window);
 
         Itag = IScroller.subClass(itagName, {
 
@@ -169,7 +22,7 @@ module.exports = function (window) {
                     model = element.model;
                 // i-scroller reads the innercontent as it were the template
                 // i-table doesn't have a global template, but uses the innercontent as the columns-definition
-                // we can easily transfrom it:
+                // we can easily transform it:
                 try {
                     model.columns = JSON.parse(model.template);
                 }
@@ -181,13 +34,97 @@ module.exports = function (window) {
             attrs: {
                 reorderable: 'boolean',
                 resizable: 'boolean',
-                sortable: 'boolean',
+                sortable: 'string',
                 sort: 'string'
             },
 
             // adjust behaviour of the iscroller:
             getDirection: function() {
                 return 'xy';
+            },
+
+            cloneItems: function() {
+                // overrule `cloneItems` --> not only need they to be cloned, they might also need to be sorted
+                var element = this,
+                    i, len, col, columns;
+                element.$superProp('cloneItems');
+                // life sorting? than sort the table:
+                if (element.model.sortable && (element.model.sortable.toLowerCase()==='life')) {
+                    element._sortItems();
+                }
+                else {
+                    // no guarantee the items are still sorted --> unmark it
+                    columns = element.model.columns;
+                    if (columns) {
+                        len = columns.length;
+                        for (i=0; i<len; i++) {
+                            col = columns[i];
+                            (col.sort==='hidden') || (col.sort='none');
+                        }
+                    }
+                }
+            },
+
+            sort: function(colIndex, keepCurrent, force) {
+                var element = this,
+                    model = element.model,
+                    columns = model.columns,
+                    column = columns[colIndex],
+                    i, len, col;
+                if (!column) {
+                    console.warn('trying to sort an invalid column. index: '+colIndex);
+                    return;
+                }
+                if (!force && (!model.sortable || (column.sort==='hidden'))) {
+                    console.warn('not allowed to sort column at index '+colIndex);
+                    return;
+                }
+                len = columns.length;
+                for (i=0; i<len; i++) {
+                    col = columns[i];
+                    if (force || (col.sort!=='hidden')) {
+                        col.sort = (i===colIndex) ? ((col.sort==='up') ? 'down' : 'up') : (keepCurrent ? col.sort : 'none');
+                    }
+                }
+            },
+
+            _sortItems: function() {
+                var element = this,
+                    model = element.model,
+                    column, colIndex, items, property, sortRendered, sortUp;
+                // find the first col that has a sort property:
+                model.columns.some(function(col, index) {
+                    if ((col.sort==='up') || (col.sort==='down')) {
+                        colIndex = index;
+                    }
+                    return (colIndex!==undefined);
+                });
+                if (colIndex!==undefined) {
+                    column = model.columns[colIndex];
+                    sortUp = (column.sort==='up');
+                    items = element.getData('items');
+                    property = column.key;
+                    sortRendered = column.sortRendered;
+                    items.sort(function(a, b) {
+                        var aComp, bComp;
+                        if (sortRendered) {
+                            aComp = element.getCellContent(a, column);
+                            bComp = element.getCellContent(b, column);
+                        }
+                        else {
+                            aComp = a[property];
+                            bComp = b[property];
+                        }
+                        if (aComp<bComp) {
+                            return sortUp ? -1 : 1;
+                        }
+                        if (aComp>bComp) {
+                            return sortUp ? 1 : -1;
+                        }
+                        // a must be equal to b
+                        return sortUp ? 0 : -1;
+                    });
+                }
             },
 
             removeListeners: function() {
@@ -262,6 +199,7 @@ module.exports = function (window) {
                     occupied = 0,
                     css = '',
                     headerContent = '',
+                    sortAttr = '',
                     cssNode = element.getElement('>style', true),
                     unspecified = [],
                     i, col, width, remaining, index;
@@ -290,7 +228,7 @@ module.exports = function (window) {
                                'i-table section.i-table-row >section:nth-child('+(i+1)+') section[is="td"], '+
                                'i-table >section[is="thead"] >span:nth-child('+(i+1)+'), '+
                                'i-table >section[is="thead"] >span:nth-child('+(i+1)+') span[is="th"] '+
-                               '{width: '+width+'px}';
+                               '{width: '+width+'px;'+((width===0) ? 'height:0;' : '')+'}';
                     }
                     else {
                         // unspecified: give it the remaining width
@@ -299,7 +237,11 @@ module.exports = function (window) {
                     }
                     // NEED DOUBLE SPAN!
                     // outer span has padding=0, so we can easily resize below padding, while the padding is applied to the inner span.
-                    headerContent += '<span><span is="th">' + col.key + '</span>'+(model.sortable ? '<span is="sort"></span>' : '')+'</span>';
+                    if (model.sortable) {
+                        col.sort || (col.sort='none');
+                        sortAttr = ' sort="'+col.sort+'"';
+                    }
+                    headerContent += '<span'+sortAttr+'><span is="th">' + col.key + '</span>'+(model.sortable ? '<span is="sort"></span>' : '')+'</span>';
                 }
                 len = unspecified.length;
                 if (len>0) {
@@ -310,7 +252,7 @@ module.exports = function (window) {
                                'i-table section.i-table-row >section:nth-child('+(index+1)+') section[is="td"], '+
                                'i-table >section[is="thead"] >span:nth-child('+(index+1)+'), '+
                                'i-table >section[is="thead"] >span:nth-child('+(index+1)+') span[is="th"] '+
-                               '{width: '+remaining+'px}';
+                               '{width: '+remaining+'px;'+((remaining<0.5) ? 'height:0;' : '')+'}';
                         occupied += remaining;
                     }
                 }
@@ -326,7 +268,7 @@ module.exports = function (window) {
                            'i-table section.i-table-row >section:nth-child('+len+') section[is="td"], '+
                            'i-table >section[is="thead"] >span:nth-child('+len+'), '+
                            'i-table >section[is="thead"] >span:nth-child('+len+') span[is="th"] '+
-                           '{width: '+width+'px}';
+                           '{width: '+width+'px;'+((width===0) ? 'height:0;' : '')+'}';
 
                 }
                 css += 'i-table >section[is="thead"], i-table >span {width:'+occupied+'px}';
@@ -335,13 +277,16 @@ module.exports = function (window) {
                 fixedHeaderNode.setHTML(headerContent);
                 // save current definition of the columns as a copy:
                 element.setData('_columnsCopy', columns.deepClone());
+                // if the sortdata changed, than we might need to resort:
+                model.sortable && element._sortItems();
             },
 
             sync: function() {
                 var element = this,
-                    prevColdef = element.getData('_columnsCopy') || [],
+                    prevColDef = element.getData('_columnsCopy') || [],
                     scrollContainer, maxHeight, vRowChildNodes, vRowChildNode, len, i, vCellNodes, vCellChildNode, j, len2;
-                element.model.columns.sameValue(prevColdef) || element.syncCols();
+
+                element.model.columns.sameValue(prevColDef) || element.syncCols();
                 element.$superProp('sync');
                 if (ITSA.UA.isIE && ITSA.UA.ieVersion<10) {
                     // we need to calculate the height of each cell of every row and set the max-height as inline height
@@ -368,14 +313,37 @@ module.exports = function (window) {
                 }
             },
 
+            getCellContent: function(item, col) {
+                var value, formatter, cellContent;
+                value = item[col.key];
+                formatter = col.formatter;
+                (value===undefined) && (value='');
+                if (formatter) {
+                    if (formatter.indexOf('<%')!==-1) {
+                        cellContent = microtemplate(formatter, value);
+                    }
+                    else if (/{\S+}/.test(formatter)) {
+                        cellContent = formatter.substitute(value);
+                    }
+                    else {
+                        cellContent = formatter;
+                    }
+                }
+                else {
+                    cellContent = value;
+                }
+                return cellContent;
+            },
+
             drawItem: function(oneItem, prevItem, index) {
                 var element = this,
                     model = element.model,
+                    editCell = model.editCell,
                     columns = model.columns,
                     odd = ((index%2)!==0),
                     draggedCol = element.getData('_draggedCol'),
-                    rowContent = '<section class="i-table-row '+(odd ? ' odd' : ' even')+'">',
-                    len, i, col, value, formatter, cellContent;
+                    rowContent = '<section data-index="'+index+'" class="i-table-row '+(odd ? ' odd' : ' even')+'">',
+                    len, i, col, cellContent, dataEditing;
                 if (!Object.isObject(oneItem)) {
                     console.warn('table item is no object!');
                     return;
@@ -383,25 +351,17 @@ module.exports = function (window) {
                 len = columns.length;
                 for (i=0; i<len; i++) {
                     col = columns[i];
-                    value = oneItem[col.key] || '';
-                    formatter = col.formatter;
-                    if (formatter) {
-                        if (formatter.indexOf('<%')!==-1) {
-                            cellContent = microtemplate(formatter, value);
-                        }
-                        else if (/{\S+}/.test(formatter)) {
-                            cellContent = formatter.substitute(value);
-                        }
-                        else {
-                            cellContent = formatter;
-                        }
-                    }
-                    else {
-                        cellContent = value;
-                    }
                     // NEED DOUBLE SPAN!
                     // outer section has padding=0, so we can easily resize below padding, while the padding is applied to the inner section.
-                    rowContent += '<section><section is="td" class="col-'+col.key.replaceAll(' ', '-')+((draggedCol===i) ? ' col-dragging' : '')+'">' + cellContent + '</section></section>';
+                    if (editCell && (editCell.col===i) && (editCell.row===index)) {
+                        cellContent = '<i-input><!--'+(oneItem[col.key] || '')+'--></i-input>';
+                        dataEditing = '  data-editing="true"';
+                    }
+                    else {
+                        cellContent = element.getCellContent(oneItem, col);
+                        dataEditing = '';
+                    }
+                    rowContent += '<section><section is="td"'+dataEditing+' class="col-'+col.key.replaceAll(' ', '-')+((draggedCol===i) ? ' col-dragging' : '')+'">' + cellContent + '</section></section>';
                 }
                 rowContent += '</section>';
                 return rowContent;
