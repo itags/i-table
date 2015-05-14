@@ -201,25 +201,27 @@ module.exports = function (window) {
     }, 'i-table section[is="td"]');
 
     Event.after('nodeinsert', function(e) {
-        e.target.focus();
-    }, 'i-table i-input');
+        var inputNode = e.target;
+        inputNode.focus();
+        inputNode.selectionStart = 0;
+        inputNode.selectionEnd = inputNode.getValue().length;
+    }, 'i-table input');
 
-    Event.after('i-input:changed', function(e) {
-        var cellNode = e.target.getParent().getParent(),
-            rowNode = cellNode.getParent(),
+    Event.after('change', function(e) {
+        var inputNode = e.target,
+            tdNode = inputNode.getParent(),
+            rowNode = tdNode.getParent().getParent(),
             rowIndex = parseInt(rowNode.getAttr('data-index'), 10),
-            colIndex = rowNode.vnode.vChildNodes.indexOf(cellNode.vnode),
             itable = rowNode.inside('i-table'),
-            model = itable.model,
-            item = itable.getData('items')[rowIndex],
-            colums = model.columns,
-            col = colums[colIndex];
-console.warn('colIndex '+colIndex);
-console.warn('check: '+(cellNode.vnode.vParent===rowNode.vnode));
-console.warn(cellNode.vnode);
-console.warn(rowNode.vnode.vChildNodes);
-        item[col.key] = e.newValue;
-        delete model.editCell;
-    }, 'i-table');
+            property = tdNode.getAttr('prop'),
+            item = itable.getData('items')[rowIndex];
+        item[property] = inputNode.getValue();
+        delete itable.model.editCell;
+    }, 'i-table input');
+
+    Event.after('keypress', function(e) {
+        var inputNode = e.target;
+        (e.charCode===13) && inputNode.blur();
+    }, 'i-table input');
 
 };

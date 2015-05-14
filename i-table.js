@@ -354,14 +354,14 @@ module.exports = function (window) {
                     // NEED DOUBLE SPAN!
                     // outer section has padding=0, so we can easily resize below padding, while the padding is applied to the inner section.
                     if (editCell && (editCell.col===i) && (editCell.row===index)) {
-                        cellContent = '<i-input><!--'+(oneItem[col.key] || '')+'--></i-input>';
+                        cellContent = '<input value="'+(oneItem[col.key] || '')+'" />';
                         dataEditing = '  data-editing="true"';
                     }
                     else {
                         cellContent = element.getCellContent(oneItem, col);
                         dataEditing = '';
                     }
-                    rowContent += '<section><section is="td"'+dataEditing+' class="col-'+col.key.replaceAll(' ', '-')+((draggedCol===i) ? ' col-dragging' : '')+'">' + cellContent + '</section></section>';
+                    rowContent += '<section><section is="td"'+dataEditing+' prop="'+col.key+'"'+((draggedCol===i) ? ' class="col-dragging"' : '')+'>' + cellContent + '</section></section>';
                 }
                 rowContent += '</section>';
                 return rowContent;
