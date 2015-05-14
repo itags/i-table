@@ -204,15 +204,21 @@ module.exports = function (window) {
         e.target.focus();
     }, 'i-table i-input');
 
-    Event.after('i-input:valuechange', function(e) {
+    Event.after('i-input:changed', function(e) {
         var cellNode = e.target.getParent().getParent(),
             rowNode = cellNode.getParent(),
             rowIndex = parseInt(rowNode.getAttr('data-index'), 10),
             colIndex = rowNode.vnode.vChildNodes.indexOf(cellNode.vnode),
             itable = rowNode.inside('i-table'),
+            model = itable.model,
             item = itable.getData('items')[rowIndex],
-            model = itable.model;
-        item.description = e.newValue;
+            colums = model.columns,
+            col = colums[colIndex];
+console.warn('colIndex '+colIndex);
+console.warn('check: '+(cellNode.vnode.vParent===rowNode.vnode));
+console.warn(cellNode.vnode);
+console.warn(rowNode.vnode.vChildNodes);
+        item[col.key] = e.newValue;
         delete model.editCell;
     }, 'i-table');
 
