@@ -2,8 +2,8 @@
 /* ======================================================================= */
 /* ======================================================================= */
 /* Definition of itag shadow-css is done by defining a `dummy` css-rule    */
-/* for the dummy-element: `itag-css` --> its property (also dummy) `i-tag` /*
-/* will define which itag will be css-shadowed                             /*
+/* for the dummy-element: `itag-css` --> its property (also dummy) `i-tag` */
+/* will define which itag will be css-shadowed                             */
 /* ======================================================================= */
 itag-css {
     i-tag: i-table;  /* set the property-value to the proper itag */
