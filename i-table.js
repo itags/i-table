@@ -241,7 +241,7 @@ module.exports = function (window) {
                         col.sort || (col.sort='none');
                         sortAttr = ' sort="'+col.sort+'"';
                     }
-                    headerContent += '<span'+sortAttr+'><span is="th">' + col.key + '</span>'+(model.sortable ? '<span is="sort"></span>' : '')+'</span>';
+                    headerContent += '<span'+sortAttr+'><span is="th">' + (col.label!==undefined ? col.label : col.key) + '</span>'+(model.sortable ? '<span is="sort"></span>' : '')+'</span>';
                 }
                 len = unspecified.length;
                 if (len>0) {
