@@ -155,12 +155,13 @@ module.exports = function (window) {
             }
         }
     }, function(e) {
-        var node = e.target.getParent(),
-            fixedHeaderNode = node.inside('i-table >section[is="thead"]'),
-            itable, model, vChildNodes, colIndex, firstCol, lastCol, xMouse, colLeft, colRight, startResize, insideRightArea, insideLeftArea, filterOk;
+        var e_target = e.target,
+            fixedHeaderNode = e_target.inside('i-table >section[is="thead"]'),
+            itable, model, vChildNodes, colIndex, firstCol, lastCol, xMouse, colLeft, colRight, startResize, insideRightArea, insideLeftArea, filterOk, node;
         if (!fixedHeaderNode) {
             return false;
         }
+        node = e_target.getParent();
         itable = fixedHeaderNode.getParent(),
         model = itable.model,
         vChildNodes = fixedHeaderNode.vnode.vChildNodes;
