@@ -353,7 +353,7 @@ module.exports = function (window) {
                     col = columns[i];
                     // NEED DOUBLE SPAN!
                     // outer section has padding=0, so we can easily resize below padding, while the padding is applied to the inner section.
-                    if (editCell && (editCell.col===i) && (editCell.row===index)) {
+                    if (editCell && element.hasClass('editing') && (editCell.col===i) && (editCell.row===index)) {
                         cellContent = '<input value="'+(oneItem[col.key] || '')+'" />';
                         dataEditing = '  data-editing="true"';
                     }

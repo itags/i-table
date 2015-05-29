@@ -199,6 +199,9 @@ module.exports = function (window) {
             itable = rowNode.inside('i-table'),
             model = itable.model;
         model.editCell = {col: colIndex, row: rowIndex};
+        // also mark this specific element as being `editing`: we do not want to share
+        // editing features accross multiple itags that share the same model:
+        itable.setClass('editing', true);
     }, 'i-table section[is="td"]');
 
     Event.after('nodeinsert', function(e) {
@@ -214,10 +217,17 @@ module.exports = function (window) {
             rowNode = tdNode.getParent().getParent(),
             rowIndex = parseInt(rowNode.getAttr('data-index'), 10),
             itable = rowNode.inside('i-table'),
-            property = tdNode.getAttr('prop'),
-            item = itable.getData('items')[rowIndex];
-        item[property] = inputNode.getValue();
+            modelitems = itable.model.items,
+            property = tdNode.getAttr('prop');
+            // item = modelitems[rowIndex];
+
+// modelitems[rowIndex][property] = 999;
+// console.warn(modelitems[rowIndex][property]);
+        modelitems[rowIndex][property] = inputNode.getValue();
+
+
         delete itable.model.editCell;
+        itable.removeClass('editing');
     }, 'i-table input');
 
     Event.after('keypress', function(e) {
