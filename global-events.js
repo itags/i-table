@@ -218,14 +218,32 @@ module.exports = function (window) {
             rowIndex = parseInt(rowNode.getAttr('data-index'), 10),
             itable = rowNode.inside('i-table'),
             modelitems = itable.model.items,
-            property = tdNode.getAttr('prop');
-            // item = modelitems[rowIndex];
+            property = tdNode.getAttr('prop'),
+            newValue = inputNode.getValue(),
+            validValue;
 
-// modelitems[rowIndex][property] = 999;
-// console.warn(modelitems[rowIndex][property]);
-        modelitems[rowIndex][property] = inputNode.getValue();
-
-
+        // first determine the previous `type` --> we need the same type after changing!
+        switch (typeof modelitems[rowIndex][property]) {
+            case 'boolean':
+                validValue = newValue.validateBoolean();
+                newValue = (newValue==='true');
+                break;
+            case 'number':
+                validValue = newValue.validateFloat();
+                newValue = parseFloat(newValue);
+                break;
+            case 'date':
+                validValue = newValue.validateDate();
+                newValue = newValue.toDate();
+                break;
+            case 'string':
+                validValue = true;
+                break;
+            default:
+                validValue = true;
+        }
+        // now we have `newValue` in its true type. We can set it now:
+        validValue && (modelitems[rowIndex][property]=newValue);
         delete itable.model.editCell;
         itable.removeClass('editing');
     }, 'i-table input');
