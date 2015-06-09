@@ -49,7 +49,9 @@ module.exports = function (window) {
                     model = element.model,
                     i, len, col, columns;
                 element.setData('items', model.items.deepClone());
-                // life sorting? than sort the table:
+                // second time: for sync comparision: might be different from `items`, because `items` can be sorted
+                element.setData('_itemsCopy', model.items.deepClone()); // second time: for sync comparision
+                // life sorting? then sort the table:
                 if (element.model.sortable && (element.model.sortable.toLowerCase()==='life')) {
                     element._sortItems();
                 }
@@ -204,7 +206,6 @@ module.exports = function (window) {
                     cssNode = element.getElement('>style', true),
                     unspecified = [],
                     i, col, width, remaining, index;
-
                 for (i=0; i<len; i++) {
                     col = columns[i];
                     if (typeof col==='string') {
@@ -285,11 +286,15 @@ module.exports = function (window) {
             sync: function() {
                 var element = this,
                     prevColDef = element.getData('_columnsCopy') || [],
-                    prevItemsDef = element.getData('items') || [],
+                    prevItemsDef = element.getData('_itemsCopy') || [],
                     scrollContainer, maxHeight, vRowChildNodes, vRowChildNode, len, i, vCellNodes, vCellChildNode, j, len2;
 
                 element.model.columns.sameValue(prevColDef) || element.syncCols();
+
+
                 element.model.items.sameValue(prevItemsDef) || element.cloneItems();
+
+
                 element.$superProp('sync');
                 if (ITSA.UA.isIE && ITSA.UA.ieVersion<10) {
                     // we need to calculate the height of each cell of every row and set the max-height as inline height
