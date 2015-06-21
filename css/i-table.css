@@ -1,0 +1,411 @@
+/* ======================================================================= */
+/* ======================================================================= */
+/* ======================================================================= */
+/* Definition of itag shadow-css is done by defining a `dummy` css-rule    */
+/* for the dummy-element: `itag-css` --> its property (also dummy) `i-tag` */
+/* will define which itag will be css-shadowed                             */
+/* ======================================================================= */
+itag-css {
+    i-tag: i-table;  /* set the property-value to the proper itag */
+}
+/* ======================================================================= */
+/* ======================================================================= */
+/* ======================================================================= */
+
+
+/* ================================= */
+/* set invisiblity when not rendered */
+/* ================================= */
+i-table:not(.itag-rendered) {
+    /* don't set visibility to hidden --> you cannot set a focus on those items */
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    z-index: -1;
+}
+
+i-table:not(.itag-rendered) * {
+    opacity: 0 !important;
+}
+/* ================================= */
+
+i-table {
+    background-color: #CCC; /* when no cols in display */
+    margin: 0;
+    display: inline-block;
+    position: relative;
+    vertical-align: top;
+    border: 1px solid #cbcbcb;
+    min-width: 1em;
+    min-height: 1em;
+    overflow: hidden;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+/* simulation of table-element: */
+i-table >span {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    display: block;
+}
+
+/* simulation of tr-element: */
+i-table section.i-table-row {
+    position: relative;
+    width: auto;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    /* the next css comes from purecss: the class `.pure-g`: */
+}
+
+/* the next css comes from purecss: the class `.pure-g`: */
+i-table section.i-table-row {
+    letter-spacing: -0.31em; /* Webkit: collapse white-space between units */
+    *letter-spacing: normal; /* reset IE < 8 */
+    word-spacing: -0.43em; /* collapse white-space between units */
+    text-rendering: optimizespeed; /* Webkit: fixes text-rendering: optimizeLegibility */
+
+    /*
+    Resets the font family back to the OS/browser's default sans-serif font,
+    this the same font stack that Normalize.css sets for the `body`.
+    */
+    font-family: sans-serif;
+
+    /*
+    Use flexbox when possible to avoid `letter-spacing` side-effects.
+
+    NOTE: Firefox (as of 25) does not currently support flex-wrap, so the
+    `-moz-` prefix version is omitted.
+    */
+
+    display: block;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-flow: row wrap;
+    -ms-flex-flow: row wrap;
+    flex-flow: row wrap;
+}
+
+i-table section.i-table-row section {
+    float: left;
+    display: inline-block;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-flow: row wrap;
+    -ms-flex-flow: row wrap;
+    flex-flow: row wrap;
+}
+
+/* overrule z-index dragged element --> must be kept below.fixed-header */
+i-table .dd-high-z {
+    z-index: 896 !important;
+}
+
+/* simulation of td-element: */
+i-table section[is="td"] {
+    margin: 0;
+    padding: 0.32em 0.5em;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    border-left: 1px solid #cbcbcb;
+    border-width: 0 0 0 1px;
+    overflow: hidden;
+    display: inline-block;
+    letter-spacing: normal;
+    word-spacing: normal;
+    vertical-align: top;
+    text-rendering: auto;
+    /* DO NOT set height inside flex-box for it won't stretch anymore */
+    /* height: 100%; */
+}
+
+i-table section[is="td"][data-editing="true"] {
+    padding: 0;
+}
+
+i-table section[is="td"][data-editing="true"] input {
+    width: 100%;
+}
+
+i-table section[is="td"][data-editing="true"] input {
+    padding: 0.32em 0.5em;
+    border: none;
+    border-radius: 0;
+    box-shadow: inset 0px 0px 0px 2px #129FEA;
+}
+
+i-table section.i-table-row.empty {
+    opacity: 0;
+}
+
+i-table section[is="thead"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    z-index: 898;
+    margin: 0;
+    padding: 0;
+    background: #e0e0e0;
+    color: #000;
+    text-align: left;
+    vertical-align: middle;
+}
+
+i-table span.copy-node,
+i-table[sortable="true"] span[is="sort"],
+i-table section[is="thead"] >span,
+i-table section.i-table-row >section {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    float: left;
+    overflow: hidden;
+}
+
+i-table section[is="thead"] >span {
+    position: relative;
+}
+/* simulation of th-element: */
+i-table span[is="th"] {
+    margin: 0;
+    padding: 0.32em 0.5em;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    /*float: left;*/
+    overflow: hidden;
+    display: inline-block;
+    letter-spacing: normal;
+    word-spacing: normal;
+    vertical-align: top;
+    text-rendering: auto;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    border-left: 1px solid #cbcbcb;
+    border-width: 0 0 0 1px;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+    font-weight: bold;
+}
+
+i-table section[is="thead"].col-dragging span[is="th"],
+i-table span.copy-node span[is="th"] {
+    cursor: move;
+}
+
+i-table section[is="thead"] span:first-child span[is="th"],
+i-table section.i-table-row >section:first-child section[is="td"] {
+    border-left-width: 0;
+}
+
+/* need double: resize for mouseover, resizing when busy resizing */
+i-table section[is="thead"].resize span[is="th"],
+i-table section[is="thead"].resizing span[is="th"],
+i-table section[is="thead"].resize span[is="sort"],
+i-table section[is="thead"].resizing span[is="sort"] {
+    cursor: col-resize;
+}
+
+i-table span.copy-node {
+    position: absolute;
+    z-index: 899;
+    background-color: #666;
+    color: #FFF;
+    box-shadow: 0 0 0 1px rgba(255,255,255, 0.15) inset;
+    padding-left: 1px; /* replacement of original border-left-width */
+}
+
+i-table[sortable="true"] span.copy-node span[is="sort"] {
+    top: -9999px;
+    left: -9999px;
+}
+
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span.i-hover[sort="none"],
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"]:hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"]:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span.i-hover[sort="up"],
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"]:hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"]:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span.i-hover[sort="down"],
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"]:hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"]:focus {
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00000000', endColorstr='#1a000000',GradientType=0);
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(transparent), color-stop(40%, rgba(0,0,0, 0.05)), to(rgba(0,0,0, 0.10)));
+    background-image: -webkit-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+    background-image: -moz-linear-gradient(top, rgba(0,0,0, 0.05) 0%, rgba(0,0,0, 0.10));
+    background-image: -o-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+    background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+}
+
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"]:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"]:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"]:focus {
+    box-shadow: 0 0 0 1px rgba(0,0,0, 0.6) inset;
+}
+
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"].i-hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"]:hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"].i-hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"]:hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"].i-hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"]:hover:focus {
+    box-shadow: 0 0 0 1px rgba(0,0,0, 0.7) inset;
+}
+
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"].i-active.i-hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"].i-active:hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"].i-active.i-hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="none"].i-active:hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"].i-active.i-hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"].i-active:hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"].i-active.i-hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="up"].i-active:hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"].i-active.i-hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"].i-active:hover,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"].i-active.i-hover:focus,
+i-table[sortable="true"] section[is="thead"]:not(.resize):not(.resizing) span[sort="down"].i-active:hover:focus {
+    box-shadow: 0 0 0 1px rgba(0,0,0, 0.8) inset, 0 0 6px rgba(0,0,0, 0.4) inset;
+    border-left: solid 1px rgba(0,0,0, 0.8);
+}
+
+
+i-table[sortable="true"] span:focus {
+    outline: 0;
+}
+
+i-table span.copy-node.first-child {
+    padding-left: 0;
+}
+
+i-table span.copy-node span[is="th"] {
+    border: none !important;
+}
+
+i-table span.vertical-insert {
+    position: absolute;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 6px;
+    height: 100%;
+    top: 0;
+    background-color: #666;
+    z-index: 897;
+}
+
+i-table section.col-dragging:not(.fixed-header),
+i-table span.col-dragging {
+    opacity: 0.3 !important;
+}
+
+/*
+striping:
+   even - #fff (white)
+   odd  - #f2f2f2 (light gray)
+*/
+i-table.striped .i-table-row.even section[is="td"] {
+    background-color: #FFF;
+}
+
+i-table.striped .i-table-row.odd section[is="td"] {
+    background-color: #f2f2f2;
+}
+
+/* BORDERED TABLES */
+i-table.bordered section[is="td"] {
+    border-bottom: 1px solid #cbcbcb;
+}
+
+i-table.bordered section.i-table-row:last-child > section[is="td"],
+i-table.horizontal section.i-table-row:last-child > section[is="td"] {
+    border-bottom-width: 0;
+}
+
+
+/* HORIZONTAL BORDERED TABLES */
+
+i-table.horizontal section[is="td"],
+i-table.horizontal span[is="th"] {
+    border-width: 0 0 1px 0;
+    border-bottom: 1px solid #cbcbcb;
+}
+
+i-table[sortable="true"] span[is="sort"] {
+    position: absolute;
+    width: 1em;
+    height: 100%;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+}
+
+i-table[sortable="true"] span[is="sort"]:before {
+    content: ' ';
+    border-left: 0.4em solid rgba(0, 0, 0, 0);
+    border-right: 0.4em solid rgba(0, 0, 0, 0);
+    border-bottom: 0.5em solid #AAA;
+    right: 0.15em;
+    position: absolute;
+    top: 0.3em;
+}
+
+i-table[sortable="true"] span[is="sort"]:after {
+    content: ' ';
+    border-left: 0.4em solid rgba(0, 0, 0, 0);
+    border-right: 0.4em solid rgba(0, 0, 0, 0);
+    border-top: 0.5em solid #AAA;
+    left: 0.1em;
+    position: absolute;
+    top: 1em;
+}
+
+i-table[sortable="true"] span[sort="down"] span[is="sort"]:before {
+    border-bottom-color: #000;
+    top: 0.7em;
+}
+
+i-table[sortable="true"] span[sort="down"] span[is="sort"]:after {
+    border-top: none;
+}
+
+i-table[sortable="true"] span[sort="up"] span[is="sort"]:before {
+    border-bottom: none;
+}
+
+i-table[sortable="true"] span[sort="up"] span[is="sort"]:after {
+    border-top-color: #000;
+    top: 0.7em;
+}
+
+i-table[sortable="true"] span[sort="hidden"] span[is="sort"]:before,
+i-table[sortable="true"] span[sort="hidden"] span[is="sort"]:after {
+    border: none;
+}
+
+i-table[sortable="true"] span[is="th"] {
+    padding-right: 1em;
+    cursor: pointer;
+}
+
+i-table[sortable="true"] span[sort="hidden"] span[is="sort"],
+i-table[sortable="true"] span[sort="hidden"] span[is="th"] {
+    cursor: default;
+}
