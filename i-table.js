@@ -29,6 +29,7 @@ module.exports = function (window) {
                 catch(err) {
                     model.columns = [];
                 }
+                element.uniqueId = ITSA.idGenerator('i-table');
             },
 
             attrs: {
@@ -184,6 +185,7 @@ module.exports = function (window) {
                 // set element css:
                 element.addSystemElement(css, false, true);
                 element.$superProp('render');
+                element.setAttr('i-id', element.uniqueId);
                 // fixedheadernode is only available after render of iscroller:
                 fixedHeaderNode = element.getData('_fixedHeaderNode');
                 fixedHeaderNode.setAttr('is', 'thead')
@@ -226,10 +228,10 @@ module.exports = function (window) {
                             }
                         }
                         occupied += width;
-                        css += 'i-table section.i-table-row >section:nth-child('+(i+1)+'), '+
-                               'i-table section.i-table-row >section:nth-child('+(i+1)+') section[is="td"], '+
-                               'i-table >section[is="thead"] >span:nth-child('+(i+1)+'), '+
-                               'i-table >section[is="thead"] >span:nth-child('+(i+1)+') span[is="th"] '+
+                        css += 'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+(i+1)+'), '+
+                               'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+(i+1)+') section[is="td"], '+
+                               'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+(i+1)+'), '+
+                               'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+(i+1)+') span[is="th"] '+
                                '{width: '+width+'px;'+((width===0) ? 'height:0;' : '')+'}';
                     }
                     else {
@@ -250,10 +252,10 @@ module.exports = function (window) {
                     remaining = Math.max(0, availableWidth - occupied)/len;
                     for (i=0; i<len; i++) {
                         index = unspecified[i];
-                        css += 'i-table section.i-table-row >section:nth-child('+(index+1)+'), '+
-                               'i-table section.i-table-row >section:nth-child('+(index+1)+') section[is="td"], '+
-                               'i-table >section[is="thead"] >span:nth-child('+(index+1)+'), '+
-                               'i-table >section[is="thead"] >span:nth-child('+(index+1)+') span[is="th"] '+
+                        css += 'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+(index+1)+'), '+
+                               'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+(index+1)+') section[is="td"], '+
+                               'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+(index+1)+'), '+
+                               'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+(index+1)+') span[is="th"] '+
                                '{width: '+remaining+'px;'+((remaining<0.5) ? 'height:0;' : '')+'}';
                         occupied += remaining;
                     }
@@ -266,14 +268,14 @@ module.exports = function (window) {
                     width += (availableWidth - occupied);
                     occupied = availableWidth; // needed for setting container width later on
                     len = columns.length; // redefine for it was changed
-                    css += 'i-table section.i-table-row >section:nth-child('+len+'), '+
-                           'i-table section.i-table-row >section:nth-child('+len+') section[is="td"], '+
-                           'i-table >section[is="thead"] >span:nth-child('+len+'), '+
-                           'i-table >section[is="thead"] >span:nth-child('+len+') span[is="th"] '+
+                    css += 'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+len+'), '+
+                           'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+len+') section[is="td"], '+
+                           'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+len+'), '+
+                           'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+len+') span[is="th"] '+
                            '{width: '+width+'px;'+((width===0) ? 'height:0;' : '')+'}';
 
                 }
-                css += 'i-table >section[is="thead"], i-table >span {width:'+occupied+'px}';
+                css += 'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"], i-table[i-id="'+element.uniqueId+'"] >span {width:'+occupied+'px}';
                 cssNode.setText(css);
                 // no node.templateHeaders, but predefined:
                 fixedHeaderNode.setHTML(headerContent);
