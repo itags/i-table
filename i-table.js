@@ -9,11 +9,45 @@ module.exports = function (window) {
         microtemplate = require('i-parcel/lib/microtemplate.js'),
         IScroller = require('i-scroller')(window),
         RESIZE_MARGIN = 5,
+        Event = ITSA.Event,
         Itag;
 
     if (!window.ITAGS[itagName]) {
 
         require('./global-events.js')(window);
+
+        Event.after('tap', function(e) {
+            var node = e.target,
+                element = node.inside('i-table'),
+                model = element.model,
+                prevValue, newValue;
+            if (model['rows-selectable'].toLowerCase()==='true') {
+                element.getAll('section.i-table-row.selected').removeClass('selected');
+                node.setClass('selected');
+                newValue = node.getAttr('data-index');
+                prevValue = model['rows-selected'];
+                if (prevValue!==newValue) {
+                    model['rows-selected'] = newValue;
+                    /**
+                    * Emitted when a the i-select changes its value
+                    *
+                    * @event i-select:valuechange
+                    * @param e {Object} eventobject including:
+                    * @param e.target {HtmlElement} the i-select element
+                    * @param e.prevValue {Number} the selected item, starting with 1
+                    * @param e.newValue {Number} the selected item, starting with 1
+                    * @param e.buttonText {String} the text that will appear on the button
+                    * @param e.listText {String} the text as it is in the list
+                    * @since 0.1
+                    */
+                    element.emit('rowselect', {
+                        prevValue: prevValue,
+                        newValue: newValue,
+                        node: node
+                    });
+                }
+            }
+        }, 'i-table[rows-selectable] section.i-table-row');
 
         Itag = IScroller.subClass(itagName, {
 
@@ -27,7 +61,7 @@ module.exports = function (window) {
                     model.columns = JSON.parse(model.template);
                 }
                 catch(err) {
-                    console.warn(err);
+                    console.warn(itagName, ' template is not a JSON object');
                     model.columns = [];
                 }
                 element.uniqueId = ITSA.idGenerator('i-table');
@@ -37,7 +71,11 @@ module.exports = function (window) {
                 reorderable: 'boolean',
                 resizable: 'boolean',
                 sortable: 'string',
-                sort: 'string'
+                sort: 'string',
+                'row-class': 'string',
+                'row-data': 'string',
+                'rows-selected': 'string',
+                'rows-selectable': 'string'
             },
 
             // adjust behaviour of the iscroller:
@@ -232,7 +270,7 @@ module.exports = function (window) {
                         css += 'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+(i+1)+'), '+
                                'i-table[i-id="'+element.uniqueId+'"] section.i-table-row >section:nth-child('+(i+1)+') section[is="td"], '+
                                'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+(i+1)+'), '+
-                               'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+(i+1)+') span[is="th"] '+
+                               'i-table[i-id="'+element.uniqueId+'"] >section[is="thead"] >span:nth-child('+(i+1)+') section[is="th"] '+
                                '{width: '+width+'px;'+((width===0) ? 'height:0;' : '')+'}';
                     }
                     else {
@@ -349,33 +387,97 @@ module.exports = function (window) {
             drawItem: function(oneItem, prevItem, index) {
                 var element = this,
                     model = element.model,
-                    editCell = model.editCell,
                     columns = model.columns,
                     odd = ((index%2)!==0),
                     draggedCol = element.getData('_draggedCol'),
-                    rowContent = '<section data-index="'+index+'" class="i-table-row '+(odd ? ' odd' : ' even')+'">',
-                    len, i, col, cellContent, dataEditing;
+                    rowClass = model['row-class'],
+                    rowData = model['row-data'],
+                    rowSelectedClass = model['rows-selected'],
+                    selectedClass = '',
+                    extraRowData = '',
+                    len, i, col, cellContent, className, cellClass, extraRowClass, rowContent;
                 if (!Object.isObject(oneItem)) {
                     console.warn('table item is no object!');
                     return;
                 }
+                if (rowSelectedClass) {
+                    if (rowSelectedClass[0]==='[') {
+                        try {
+                            rowSelectedClass = JSON.parse(rowSelectedClass);
+                            rowSelectedClass.contains(index) && (selectedClass=' selected');
+                        }
+                        catch (err) {
+                            console.warn('Invalid Array for rows-selected');
+                            rowSelectedClass = [];
+                        }
+                    }
+                    else {
+                        // DO NOT type-compare, for rowSelectedClass is a String and index is a Number
+                        (rowSelectedClass==index) && (selectedClass=' selected');
+                    }
+                }
+                extraRowClass = rowClass ? ' '+element.templater(oneItem, rowClass, index) : '';
+                if (rowData) {
+                    extraRowData = ' data-row="'+element.templater(oneItem, rowData, index)+'"';
+                }
+                rowContent = '<section data-index="'+index+'"'+extraRowData+' class="i-table-row '+(odd ? ' odd' : ' even')+selectedClass+extraRowClass+'">',
                 len = columns.length;
                 for (i=0; i<len; i++) {
                     col = columns[i];
-                    // NEED DOUBLE SPAN!
+                    // NEED DOUBLE SECTION!
                     // outer section has padding=0, so we can easily resize below padding, while the padding is applied to the inner section.
-                    if (editCell && element.hasClass('editing') && (editCell.col===i) && (editCell.row===index)) {
-                        cellContent = '<input value="'+(oneItem[col.key] || '')+'" />';
-                        dataEditing = '  data-editing="true"';
-                    }
-                    else {
-                        cellContent = element.getCellContent(oneItem, col);
-                        dataEditing = '';
-                    }
-                    rowContent += '<section><section is="td"'+dataEditing+' prop="'+col.key+'"'+((draggedCol===i) ? ' class="col-dragging"' : '')+'>' + cellContent + '</section></section>';
+                    cellContent = element.cellContent(col, oneItem, index, i);
+                    cellClass = col['class'];
+                    className = cellClass ? (' '+element.cellClass(oneItem, cellClass, index, cellContent)) : '';
+                    (draggedCol===i) && (className+=' col-dragging');
+                    (className.trim()!=='') && (className=' class="'+className+'"');
+                    rowContent += '<section><section is="td"'+className+cellContent.data+' prop="'+col.key+'">' + cellContent.content + '</section></section>';
                 }
                 rowContent += '</section>';
                 return rowContent;
+            },
+
+            cellContent: function(col, oneItem, rowIndex, colIndex, attributeData) {
+                var element = this,
+                    model = element.model,
+                    editCell = model.editCell,
+                    content, data;
+                if (editCell && element.hasClass('editing') && (editCell.col===colIndex) && (editCell.row===rowIndex)) {
+                    content = '<input value="'+(oneItem[col.key] || '')+'" />';
+                    data = (attributeData ? (' '+attributeData) : '') + ' data-editing="true"';
+                }
+                else {
+                    content = element.getCellContent(oneItem, col);
+                    data = (attributeData ? (' '+attributeData) : '');
+                }
+                return {
+                    data: data,
+                    content: content
+                };
+            },
+
+            cellClass: function(oneItem, classFormatter, index /*, cellContentObj */) {
+                return this.templater(oneItem, classFormatter, index);
+            },
+
+            getItems: function(/* tdNode */) {
+                return this.model.items;
+            },
+
+            templater: function(item, formatter /*, index */) {
+                var returnValue;
+                if (formatter) {
+                    if (formatter.indexOf('<%')!==-1) {
+                        returnValue = microtemplate(formatter, item);
+                    }
+                    else if (/{\S+}/.test(formatter)) {
+                        returnValue = formatter.substitute(item);
+                    }
+                    else {
+                        returnValue = formatter;
+                    }
+                }
+                return returnValue;
             },
 
             destroy: function() {

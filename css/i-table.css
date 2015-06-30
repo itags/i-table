@@ -94,7 +94,7 @@ i-table section.i-table-row {
     flex-flow: row wrap;
 }
 
-i-table section.i-table-row section {
+i-table section.i-table-row >section {
     float: left;
     display: inline-block;
     display: -webkit-flex;
@@ -103,6 +103,11 @@ i-table section.i-table-row section {
     -webkit-flex-flow: row wrap;
     -ms-flex-flow: row wrap;
     flex-flow: row wrap;
+}
+
+i-table section.i-table-row.selected section[is="td"],
+i-table.striped section.i-table-row.selected section[is="td"] {
+    background-color: #c0e5fd;
 }
 
 /* overrule z-index dragged element --> must be kept below.fixed-header */

@@ -217,7 +217,7 @@ module.exports = function (window) {
             rowNode = tdNode.getParent().getParent(),
             rowIndex = parseInt(rowNode.getAttr('data-index'), 10),
             itable = rowNode.inside('i-table'),
-            modelitems = itable.model.items,
+            modelitems = itable.getItems(tdNode),
             property = tdNode.getAttr('prop'),
             newValue = inputNode.getValue(),
             validValue;
